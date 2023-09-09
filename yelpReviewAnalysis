@@ -86,5 +86,24 @@ def tokenize_vecs(text):
             clean_tokens.append(token)
     return clean_tokens
 
+X_word2vec = []
+for text in X_text:
+  review = tokenize_vecs(text) # returns cleaned list of spacy tokens
+  review_vec = [0]*300
+  for word in review:
+    review_vec += word.vector
+  review_vec = review_vec / len(review)
+  X_word2vec.append(review_vec)
+
+w2v_model = LogisticRegression(max_iter = 1000)
+# train-test split
+X_train_word2vec, X_test_word2vec, y_train_word2vec, y_test_word2vec = train_test_split(X_word2vec, y, test_size=0.2, random_state=101)
+w2v_model.fit(X_train_word2vec, y_train_word2vec)
+w2v_preds = w2v_model.predict(X_test_word2vec)
+accuracy = accuracy_score(y_test_word2vec, w2v_preds)
+print (accuracy)
+
+
+
 
 
