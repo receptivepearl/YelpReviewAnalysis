@@ -1,0 +1,90 @@
+#what first 5 lines of yelp review list looks like
+#column with words shows how many times that word was used in review
+yelp_full = pd.read_csv('yelp_final.csv')
+yelp_full.head()
+
+#adds 2 new columns:stars and text
+needed_columns = ["stars","text"] #YOUR CODE HERE: fill in the columns
+yelp = yelp_full[needed_columns]
+yelp.head()
+
+#prints all 5 star reviews
+num_stars =  5#@param {type:"integer"}
+for t in yelp[yelp['stars'] == num_stars]['text'].head(20).values:
+    print (t)
+
+#creates column identifying whether the review is good of bad
+def is_good_review(num_stars):
+    if num_stars >= 4: ### YOUR CODE HERE
+        return True
+    else:
+        return False
+
+# Change the stars column to either be 'good' or 'bad'.
+yelp['is_good_review'] = yelp['stars'].apply(is_good_review)
+yelp.head()
+
+X_text = yelp['text']
+y = yelp['is_good_review']
+
+#tokenizes reviews, removes stopwords, prepares vocab
+def tokenize(text):
+    clean_tokens = []
+    for token in text_to_nlp(text):
+        if (not token.is_stop) & (token.lemma_ != '-PRON-') & (not token.is_punct): # -PRON- is a special all inclusive "lemma" spaCy uses for any pronoun, we want to exclude these
+            clean_tokens.append(token.lemma_)
+    return clean_tokens
+bow_transformer = CountVectorizer(analyzer=tokenize, max_features=800).fit(X_text)
+X = bow_transformer.transform(X_text)
+pd.DataFrame(X.toarray())
+
+#splits training and testing data; training to train log regression model, testing to test model
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=101)
+
+#fit data into model
+logistic_model = LogisticRegression()
+logistic_model.fit(X_train,y_train)
+
+#test model
+logistic_model = LogisticRegression()
+logistic_model.fit(X_train,y_train)
+y_pred = logistic_model.predict(X_test)
+accuracy = accuracy_score(y_test,y_pred) 
+print (accuracy)
+
+#sets weight of each review, whether good or bad
+def get_word_weight(word,model,vocab_dict):
+  if word in vocab_dict:
+    #YOUR CODE HERE
+    weight = model.coef_[0][vocab_dict[word]]
+    return weight 
+  else:
+    return "That word is not in our Vocabulary!"
+
+#import model
+from sklearn.naive_bayes import MultinomialNB
+nb_model = MultinomialNB()
+
+#fit model, 80% accuracy
+nb_model.fit(X_train,y_train)
+y_pred = nb_model.predict(X_test) #YOUR CODE HERE
+accuracy = accuracy_score(y_test,y_pred) #YOUR CODE HERE
+print (accuracy)
+
+#find word similarity to increase accuracy of model
+text_to_nlp = en_core_web_md.load()
+doc = text_to_nlp(u"pineapple and textbook")
+word1 = doc[0]
+word2 = doc[2]
+word1.similarity(word2)
+
+#remove stop words, pronouns, and punctuation, and convert each word to a spaCy object
+def tokenize_vecs(text):
+    clean_tokens = []
+    for token in text_to_nlp(text):
+        if (not token.is_stop) & (token.lemma_ != '-PRON-') & (not token.is_punct):
+            clean_tokens.append(token)
+    return clean_tokens
+
+
+
